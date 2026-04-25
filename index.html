@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Player Stats Dashboard - MOSS</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg-dark: #121212;
+    --bg-panel: #1e1e1e;
+    --accent: #ffcc00;
+    --text-main: #e0e0e0;
+    --text-dim: #888;
+    --border: #333;
+    --hover: #2a2a2a;
+    --icon-size: 32px; 
+    --transition-speed: 0.01s;
+  }
+
+  body {
+    font-family: 'Google Sans Code', monospace;
+    background: var(--bg-dark);
+    color: var(--text-main);
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 250px;
+    min-width: 250px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel);
+    z-index: 10;
+  }
+
+  .sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .search-box {
+    width: 100%;
+    padding: 8px;
+    background: #121212;
+    border: 1px solid var(--border);
+    color: white;
+    border-radius: 4px;
+    box-sizing: border-box;
+    margin-top: 10px;
+    font-family: inherit;
+  }
+
+  #players-list {
+    flex-grow: 1;
+    overflow-y: auto;
+  }
+
+  .player {
+    padding: 12px 20px;
+    cursor: pointer;
+    border-bottom: 1px solid #252525;
+    transition: background 0.2s;
+    font-size: 14px;
+  }
+
+  .player:hover { background: var(--hover); }
+  .player.active { 
+    background: var(--hover); 
+    border-left: 4px solid var(--accent);
+  }
+
+  /* Area de Contenido */
+  .content {
+    flex-grow: 1;
+    padding: 30px;
+    overflow-y: auto;
+    background: var(--bg-dark);
+    position: relative;
+  }
+
+  /* Transición de Carga (Skeleton Blur) */
+  .stats-wrapper {
+    transition: filter var(--transition-speed) ease, opacity var(--transition-speed) ease;
+  }
+
+  .loading-active .stats-wrapper {
+    filter: blur(4px);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .content-header {
+    margin-bottom: 30px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .header-stats-group {
+    display: flex;
+    gap: 30px;
+    text-align: right;
+  }
+
+  .play-time-label {
+    font-size: 12px;
+    color: var(--accent);
+    text-transform: uppercase;
+    display: block;
+  }
+
+  .play-time-value {
+    font-size: 24px;
+    font-weight: bold;
+  }
+
+  .uuid-badge {
+    display: inline-block;
+    background: #252525;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* Acordeón de Stats */
+  .stat-category {
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg-panel);
+  }
+
+  .category-header {
+    background: var(--bg-panel);
+    padding: 12px 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+  }
+
+  .category-header:hover { background: var(--hover); }
+  
+  .category-title {
+    font-weight: bold;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+
+  .category-content {
+    padding: 20px;
+    display: none; 
+    background: #161616;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px 80px;
+  }
+
+  .category-content.open { display: grid; }
+  .category-header.open .chevron::before { transform: rotate(90deg); }
+
+  .sub-category-title {
+    grid-column: 1 / -1;
+    padding: 10px 0;
+    margin-top: 10px;
+    border-bottom: 1px solid #333;
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+
+  .stat-row {
+    padding: 10px 0;
+    border-bottom: 1px solid #222;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .stat-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    overflow: hidden;
+  }
+
+  .stat-icon {
+    width: var(--icon-size);
+    height: var(--icon-size);
+    image-rendering: pixelated; 
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-5px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .stat-label { 
+    color: #bbb;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .stat-value { font-weight: bold; color: white; font-size: 1.1em; }
+
+  .chevron::before {
+    content: '▶';
+    display: inline-block;
+    transition: transform 0.2s;
+    font-size: 10px;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+
+  @media (max-width: 1200px) {
+    .category-content { grid-template-columns: repeat(2, 1fr); gap: 12px 25px; }
+  }
+  @media (max-width: 700px) {
+    .category-content { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h2 style="margin:0; font-size: 1.2em;">MOSS Stats</h2>
+    <input type="text" id="search" class="search-box" placeholder="Buscar jugador...">
+  </div>
+  <div id="players-list"></div>
+</aside>
+
+<main class="content" id="main-content">
+  <div class="stats-wrapper" id="stats-wrapper">
+    <div id="stats-header">
+      <div style="text-align: center; color: var(--text-dim); margin-top: 150px;">
+        <h1>Seleccioná un jugador</h1>
+      </div>
+    </div>
+
+    <div id="categories-container" style="display: none;">
+      <div class="stat-category" id="sec-distance">
+          <div class="category-header" onclick="toggleCategory(this)" data-cat-id="distance">
+            <span class="category-title">Distancia Recorrida</span>
+            <span class="chevron"></span>
+          </div>
+          <div class="category-content" id="content-distance"></div>
+      </div>
+
+      <div class="stat-category" id="sec-combat">
+          <div class="category-header" onclick="toggleCategory(this)" data-cat-id="combat">
+            <span class="category-title">Combate</span>
+            <span class="chevron"></span>
+          </div>
+          <div class="category-content" id="content-combat"></div>
+      </div>
+
+      <div id="dynamic-categories"></div>
+
+      <div class="stat-category" id="sec-interactions">
+          <div class="category-header" onclick="toggleCategory(this)" data-cat-id="interactions">
+            <span class="category-title">Interacciones</span>
+            <span class="chevron"></span>
+          </div>
+          <div class="category-content" id="content-interactions"></div>
+      </div>
+
+      <div class="stat-category" id="sec-various">
+          <div class="category-header" onclick="toggleCategory(this)" data-cat-id="various">
+            <span class="category-title">Varios</span>
+            <span class="chevron"></span>
+          </div>
+          <div class="category-content" id="content-various"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="statMap.js"></script>
+
+<script>
+const API_BASE = "https://moss-proxy-orpin.vercel.app/api";
+const playersListDiv = document.getElementById("players-list");
+const mainContent = document.getElementById("main-content");
+const statsHeader = document.getElementById("stats-header");
+const categoriesContainer = document.getElementById("categories-container");
+const dynamicCategories = document.getElementById("dynamic-categories");
+const searchInput = document.getElementById("search");
+
+let allPlayers = [];
+let openCategories = new Set(); // Para persistencia
+
+const vanillaSections = [
+  { id: "minecraft:killed", title: "Entidades Asesinadas" },
+  { id: "minecraft:killed_by", title: "Asesinado por" },
+  { id: "minecraft:mined", title: "Bloques Minados" },
+  { id: "minecraft:crafted", title: "Objetos Crafteados" },
+  { id: "minecraft:used", title: "Objetos Usados" },
+  { id: "minecraft:picked_up", title: "Items Recogidos" },
+  { id: "minecraft:dropped", title: "Items Soltados" }
+];
+
+const distStatsApie = ["minecraft:aviate_one_cm", "minecraft:climb_one_cm", "minecraft:walk_one_cm", "minecraft:sprint_one_cm", "minecraft:crouch_one_cm", "minecraft:sneak_time", "minecraft:fall_one_cm", "minecraft:swim_one_cm", "minecraft:walk_on_water_one_cm", "minecraft:walk_under_water_one_cm", "minecraft:jump"];
+const distStatsMontado = ["minecraft:pig_one_cm", "minecraft:minecart_one_cm", "minecraft:happy_ghast_one_cm", "minecraft:strider_one_cm", "minecraft:horse_one_cm", "minecraft:nautilus_one_cm", "minecraft:boat_one_cm"];
+const combatStats = ["damage_absorbed", "damage_blocked_by_shield", "damage_dealt_absorbed", "damage_dealt_resisted", "damage_resisted", "damage_taken", "deaths", "mob_kills", "player_kills"].map(s => "minecraft:" + s);
+const interactionKeywords = ["interaction_", "open_", "bell_ring", "enchanted_item", "treasure_fished", "talk_to_villager", "eat_cake"];
+
+function initStructure() {
+  dynamicCategories.innerHTML = vanillaSections.map(section => `
+    <div class="stat-category" id="sec-${section.id.replace(':', '-')}">
+      <div class="category-header" onclick="toggleCategory(this)" data-cat-id="${section.id}">
+        <span class="category-title">${section.title}</span>
+        <span class="chevron"></span>
+      </div>
+      <div class="category-content" id="content-${section.id.replace(':', '-')}"></div>
+    </div>
+  `).join('');
+}
+
+initStructure();
+
+fetch(`${API_BASE}/players`)
+  .then(res => res.json())
+  .then(data => {
+    allPlayers = (data.players || []).sort((a, b) => {
+      const nameA = a.name.toLowerCase();
+      const nameB = b.name.toLowerCase();
+      const cleanA = nameA.startsWith('.') ? nameA.substring(1) : nameA;
+      const cleanB = nameB.startsWith('.') ? nameB.substring(1) : nameB;
+      return cleanA.localeCompare(cleanB);
+    });
+    renderPlayerList(allPlayers);
+  });
+
+function renderPlayerList(list) {
+  playersListDiv.innerHTML = "";
+  list.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "player";
+    div.textContent = p.name;
+    div.onclick = () => {
+      if(div.classList.contains('active')) return;
+      document.querySelectorAll('.player').forEach(el => el.classList.remove('active'));
+      div.classList.add('active');
+      loadPlayerStats(p.uuid, p.name);
+    };
+    playersListDiv.appendChild(div);
+  });
+}
+
+function getIconPath(key, categoryId) {
+  const fileName = key.split(':')[1]; 
+  if (categoryId === "minecraft:custom") return `textures/custom/${fileName}.png`;
+  if (categoryId === "minecraft:killed" || categoryId === "minecraft:killed_by") return `textures/entities/${fileName}.png`;
+  return `textures/items/${fileName}.png`;
+}
+
+function createStatRow(key, value, categoryId = "minecraft:custom") {
+  const stat = STAT_MAP[key];
+  const label = stat?.label || key.replace('minecraft:', '').replace(/_/g, ' ');
+  const formatted = stat?.format ? stat.format(value) : value.toLocaleString();
+  const iconSrc = getIconPath(key, categoryId);
+
+  return `
+    <div class="stat-row">
+      <div class="stat-info">
+        <img src="${iconSrc}" class="stat-icon" onerror="this.onerror=null; this.src='textures/generic.png'">
+        <span class="stat-label" title="${label}">${label}</span>
+      </div>
+      <span class="stat-value">${formatted}</span>
+    </div>
+  `;
+}
+
+async function loadPlayerStats(uuid, name) {
+  // Activar estado de carga (Blur)
+  mainContent.classList.add('loading-active');
+
+  try {
+    const res = await fetch(`${API_BASE}/player?uuid=${uuid}`);
+    const data = await res.json();
+    
+    const allStats = data.stats?.stats || {};
+    const customData = allStats["minecraft:custom"] || {};
+
+    // Header simple
+    const playTimeTicks = customData["minecraft:play_time"] || 0;
+    const playTimeFormatted = STAT_MAP["minecraft:play_time"]?.format(playTimeTicks) || "0s";
+
+    statsHeader.innerHTML = `
+      <div class="content-header">
+        <div>
+          <h1 style="margin: 0 0 5px 0;">${name}</h1>
+          <span class="uuid-badge">UUID: ${uuid}</span>
+        </div>
+        <div class="header-stats-group">
+          <div><span class="play-time-label">Bajas</span><span class="play-time-value">${(customData["minecraft:mob_kills"] || 0).toLocaleString()}</span></div>
+          <div><span class="play-time-label">Muertes</span><span class="play-time-value">${(customData["minecraft:deaths"] || 0).toLocaleString()}</span></div>
+          <div><span class="play-time-label">Tiempo</span><span class="play-time-value">${playTimeFormatted}</span></div>
+        </div>
+      </div>
+    `;
+
+    categoriesContainer.style.display = "block";
+    const usedKeys = new Set(["minecraft:play_time", "minecraft:deaths", "minecraft:mob_kills"]);
+
+    // Procesar secciones
+    renderDistance(customData, usedKeys);
+    renderCombat(customData, usedKeys);
+    
+    vanillaSections.forEach(section => {
+      renderVanillaSection(section, allStats[section.id] || {});
+    });
+
+    renderInteractions(customData, usedKeys);
+    renderVarious(customData, usedKeys);
+
+    // Restaurar persistencia de acordeones
+    applyPersistence();
+
+  } catch (err) {
+    console.error(err);
+    statsHeader.innerHTML = "<h1>Error al conectar con la API</h1>";
+  } finally {
+    // Quitar blur después de una mínima demora para suavizar
+    setTimeout(() => {
+      mainContent.classList.remove('loading-active');
+    }, 10);
+  }
+}
+
+function renderDistance(data, used) {
+  const total = [...distStatsApie, ...distStatsMontado].reduce((acc, k) => acc + (data[k] || 0), 0);
+  const sec = document.getElementById('sec-distance');
+  if (total === 0) { sec.style.display = "none"; return; }
+  
+  sec.style.display = "block";
+  let html = `<div class="stat-row" style="grid-column: 1/-1; border-bottom: 2px solid var(--accent);"><span class="stat-label" style="color:var(--accent); font-weight:bold;">TOTAL RECORRIDO</span><span class="stat-value" style="color:var(--accent);">${Math.round(total/100)} bloques</span></div>`;
+  
+  const apie = distStatsApie.filter(k => data[k]).map(k => { used.add(k); return createStatRow(k, data[k]); });
+  if(apie.length) html += `<div class="sub-category-title">A pie</div>` + apie.join('');
+  
+  const montado = distStatsMontado.filter(k => data[k]).map(k => { used.add(k); return createStatRow(k, data[k]); });
+  if(montado.length) html += `<div class="sub-category-title">Montado</div>` + montado.join('');
+  
+  document.getElementById('content-distance').innerHTML = html;
+}
+
+function renderCombat(data, used) {
+  const entries = combatStats.filter(k => data[k]).map(k => { used.add(k); return createStatRow(k, data[k]); });
+  const sec = document.getElementById('sec-combat');
+  sec.style.display = entries.length ? "block" : "none";
+  if(entries.length) document.getElementById('content-combat').innerHTML = entries.join('');
+}
+
+function renderVanillaSection(section, data) {
+  const entries = Object.entries(data).sort((a,b) => b[1]-a[1]);
+  const sec = document.getElementById(`sec-${section.id.replace(':', '-')}`);
+  if(!entries.length) { sec.style.display = "none"; return; }
+  
+  sec.style.display = "block";
+  const total = entries.reduce((acc, e) => acc + e[1], 0);
+  let html = `<div class="stat-row" style="grid-column: 1/-1; border-bottom: 2px solid var(--accent);"><span class="stat-label" style="color:var(--accent); font-weight:bold;">TOTAL</span><span class="stat-value" style="color:var(--accent);">${total.toLocaleString()}</span></div>`;
+  html += entries.map(([k, v]) => createStatRow(k, v, section.id)).join('');
+  document.getElementById(`content-${section.id.replace(':', '-')}`).innerHTML = html;
+}
+
+function renderInteractions(data, used) {
+  const entries = Object.entries(data).filter(([k, v]) => interactionKeywords.some(kw => k.includes(kw)) && v > 0);
+  const sec = document.getElementById('sec-interactions');
+  sec.style.display = entries.length ? "block" : "none";
+  if(entries.length) document.getElementById('content-interactions').innerHTML = entries.map(([k, v]) => { used.add(k); return createStatRow(k, v); }).join('');
+}
+
+function renderVarious(data, used) {
+  const entries = Object.entries(data).filter(([k, v]) => !used.has(k) && v > 0).sort((a,b) => b[1]-a[1]);
+  const sec = document.getElementById('sec-various');
+  sec.style.display = entries.length ? "block" : "none";
+  if(entries.length) document.getElementById('content-various').innerHTML = entries.map(([k, v]) => createStatRow(k, v)).join('');
+}
+
+function toggleCategory(header) {
+  const id = header.getAttribute('data-cat-id');
+  const content = header.nextElementSibling;
+  
+  if (content.classList.contains('open')) {
+    content.classList.remove('open');
+    header.classList.remove('open');
+    openCategories.delete(id);
+  } else {
+    content.classList.add('open');
+    header.classList.add('open');
+    openCategories.add(id);
+  }
+}
+
+function applyPersistence() {
+  document.querySelectorAll('.category-header').forEach(header => {
+    const id = header.getAttribute('data-cat-id');
+    const content = header.nextElementSibling;
+    if (openCategories.has(id)) {
+      content.classList.add('open');
+      header.classList.add('open');
+    } else {
+      content.classList.remove('open');
+      header.classList.remove('open');
+    }
+  });
+}
+
+searchInput.addEventListener("input", (e) => {
+  const term = e.target.value.toLowerCase();
+  renderPlayerList(allPlayers.filter(p => p.name.toLowerCase().includes(term)));
+});
+</script>
+
+</body>
+</html>
