@@ -32,6 +32,15 @@
     overflow: hidden;
   }
 
+  /* Layout Adaptativo */
+  @media (max-width: 768px) {
+    body {
+      flex-direction: column;
+      overflow-y: auto;
+      height: auto;
+    }
+  }
+
   /* Sidebar */
   .sidebar {
     width: 250px;
@@ -41,6 +50,16 @@
     flex-direction: column;
     background: var(--bg-panel);
     z-index: 10;
+  }
+
+  @media (max-width: 768px) {
+    .sidebar {
+      width: 100%;
+      min-width: 100%;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      height: 300px; /* Altura fija en móvil para buscar */
+    }
   }
 
   .sidebar-header {
@@ -88,6 +107,12 @@
     position: relative;
   }
 
+  @media (max-width: 480px) {
+    .content {
+      padding: 15px;
+    }
+  }
+
   /* Transición de Carga (Skeleton Blur) */
   .stats-wrapper {
     transition: filter var(--transition-speed) ease, opacity var(--transition-speed) ease;
@@ -106,16 +131,27 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
+    flex-wrap: wrap; /* Para móviles */
+    gap: 15px;
   }
 
   .header-stats-group {
     display: flex;
-    gap: 30px;
+    gap: 20px;
     text-align: right;
   }
 
+  @media (max-width: 600px) {
+    .header-stats-group {
+      text-align: left;
+      width: 100%;
+      justify-content: space-between;
+    }
+    .play-time-value { font-size: 18px !important; }
+  }
+
   .play-time-label {
-    font-size: 12px;
+    font-size: 10px;
     color: var(--accent);
     text-transform: uppercase;
     display: block;
@@ -132,8 +168,9 @@
     padding: 4px 8px;
     border-radius: 4px;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-dim);
+    word-break: break-all; /* Evita que el UUID rompa el layout */
   }
 
   /* Acordeón de Stats */
@@ -170,11 +207,17 @@
     display: none; 
     background: #161616;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px 80px;
+    gap: 12px 40px;
   }
 
   .category-content.open { display: grid; }
-  .category-header.open .chevron::before { transform: rotate(90deg); }
+
+  @media (max-width: 1200px) {
+    .category-content { grid-template-columns: repeat(2, 1fr); gap: 12px 25px; }
+  }
+  @media (max-width: 768px) {
+    .category-content { grid-template-columns: 1fr; padding: 15px; }
+  }
 
   .sub-category-title {
     grid-column: 1 / -1;
@@ -231,17 +274,11 @@
     transition: transform 0.2s;
     font-size: 10px;
   }
+  .category-header.open .chevron::before { transform: rotate(90deg); }
 
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-
-  @media (max-width: 1200px) {
-    .category-content { grid-template-columns: repeat(2, 1fr); gap: 12px 25px; }
-  }
-  @media (max-width: 700px) {
-    .category-content { grid-template-columns: 1fr; }
-  }
 </style>
 </head>
 
@@ -258,7 +295,7 @@
 <main class="content" id="main-content">
   <div class="stats-wrapper" id="stats-wrapper">
     <div id="stats-header">
-      <div style="text-align: center; color: var(--text-dim); margin-top: 150px;">
+      <div style="text-align: center; color: var(--text-dim); margin-top: 100px;">
         <h1>Seleccioná un jugador</h1>
       </div>
     </div>
@@ -313,7 +350,7 @@ const dynamicCategories = document.getElementById("dynamic-categories");
 const searchInput = document.getElementById("search");
 
 let allPlayers = [];
-let openCategories = new Set(); // Para persistencia
+let openCategories = new Set(); 
 
 const vanillaSections = [
   { id: "minecraft:killed", title: "Entidades Asesinadas" },
@@ -368,6 +405,10 @@ function renderPlayerList(list) {
       document.querySelectorAll('.player').forEach(el => el.classList.remove('active'));
       div.classList.add('active');
       loadPlayerStats(p.uuid, p.name);
+      // Auto scroll al contenido en móvil
+      if(window.innerWidth <= 768) {
+        mainContent.scrollIntoView({ behavior: 'smooth' });
+      }
     };
     playersListDiv.appendChild(div);
   });
@@ -398,7 +439,6 @@ function createStatRow(key, value, categoryId = "minecraft:custom") {
 }
 
 async function loadPlayerStats(uuid, name) {
-  // Activar estado de carga (Blur)
   mainContent.classList.add('loading-active');
 
   try {
@@ -408,7 +448,6 @@ async function loadPlayerStats(uuid, name) {
     const allStats = data.stats?.stats || {};
     const customData = allStats["minecraft:custom"] || {};
 
-    // Header simple
     const playTimeTicks = customData["minecraft:play_time"] || 0;
     const playTimeFormatted = STAT_MAP["minecraft:play_time"]?.format(playTimeTicks) || "0s";
 
@@ -429,7 +468,6 @@ async function loadPlayerStats(uuid, name) {
     categoriesContainer.style.display = "block";
     const usedKeys = new Set(["minecraft:play_time", "minecraft:deaths", "minecraft:mob_kills"]);
 
-    // Procesar secciones
     renderDistance(customData, usedKeys);
     renderCombat(customData, usedKeys);
     
@@ -440,14 +478,12 @@ async function loadPlayerStats(uuid, name) {
     renderInteractions(customData, usedKeys);
     renderVarious(customData, usedKeys);
 
-    // Restaurar persistencia de acordeones
     applyPersistence();
 
   } catch (err) {
     console.error(err);
     statsHeader.innerHTML = "<h1>Error al conectar con la API</h1>";
   } finally {
-    // Quitar blur después de una mínima demora para suavizar
     setTimeout(() => {
       mainContent.classList.remove('loading-active');
     }, 10);
