@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dupi Stats</title>
+<title>Player Stats Dashboard - MOSS</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,15 +32,6 @@
     overflow: hidden;
   }
 
-  /* Layout Adaptativo */
-  @media (max-width: 768px) {
-    body {
-      flex-direction: column;
-      overflow-y: auto;
-      height: auto;
-    }
-  }
-
   /* Sidebar */
   .sidebar {
     width: 250px;
@@ -52,32 +43,43 @@
     z-index: 10;
   }
 
-  @media (max-width: 768px) {
-    .sidebar {
-      width: 100%;
-      min-width: 100%;
-      border-right: none;
-      border-bottom: 1px solid var(--border);
-      height: 300px; /* Altura fija en móvil para buscar */
-    }
-  }
-
   .sidebar-header {
     padding: 20px;
     border-bottom: 1px solid var(--border);
   }
 
+  .search-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
   .search-box {
-    width: 100%;
+    flex-grow: 1;
     padding: 8px;
     background: #121212;
     border: 1px solid var(--border);
     color: white;
     border-radius: 4px;
-    box-sizing: border-box;
-    margin-top: 10px;
     font-family: inherit;
   }
+
+  .sort-toggle {
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    background: transparent; /* Antes era #121212 */
+    border: none;             /* Antes era 1px solid var(--border) */
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s; /* Opcional: una transición más suave */
+   }
+
+  .sort-toggle:hover { background: var(--hover); }
+  .sort-toggle img { width: 20px; height: 20px; image-rendering: pixelated; }
 
   #players-list {
     flex-grow: 1;
@@ -107,13 +109,6 @@
     position: relative;
   }
 
-  @media (max-width: 480px) {
-    .content {
-      padding: 15px;
-    }
-  }
-
-  /* Transición de Carga (Skeleton Blur) */
   .stats-wrapper {
     transition: filter var(--transition-speed) ease, opacity var(--transition-speed) ease;
   }
@@ -131,27 +126,16 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    flex-wrap: wrap; /* Para móviles */
-    gap: 15px;
   }
 
   .header-stats-group {
     display: flex;
-    gap: 20px;
+    gap: 30px;
     text-align: right;
   }
 
-  @media (max-width: 600px) {
-    .header-stats-group {
-      text-align: left;
-      width: 100%;
-      justify-content: space-between;
-    }
-    .play-time-value { font-size: 18px !important; }
-  }
-
   .play-time-label {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--accent);
     text-transform: uppercase;
     display: block;
@@ -168,12 +152,10 @@
     padding: 4px 8px;
     border-radius: 4px;
     font-family: inherit;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-dim);
-    word-break: break-all; /* Evita que el UUID rompa el layout */
   }
 
-  /* Acordeón de Stats */
   .stat-category {
     margin-bottom: 10px;
     border: 1px solid var(--border);
@@ -207,17 +189,11 @@
     display: none; 
     background: #161616;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px 40px;
+    gap: 12px 80px;
   }
 
   .category-content.open { display: grid; }
-
-  @media (max-width: 1200px) {
-    .category-content { grid-template-columns: repeat(2, 1fr); gap: 12px 25px; }
-  }
-  @media (max-width: 768px) {
-    .category-content { grid-template-columns: 1fr; padding: 15px; }
-  }
+  .category-header.open .chevron::before { transform: rotate(90deg); }
 
   .sub-category-title {
     grid-column: 1 / -1;
@@ -237,7 +213,6 @@
     justify-content: space-between;
     align-items: center;
     font-size: 13px;
-    animation: fadeIn 0.4s ease-out;
   }
 
   .stat-info {
@@ -255,11 +230,6 @@
     flex-shrink: 0;
   }
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateX(-5px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-
   .stat-label { 
     color: #bbb;
     white-space: nowrap;
@@ -274,11 +244,17 @@
     transition: transform 0.2s;
     font-size: 10px;
   }
-  .category-header.open .chevron::before { transform: rotate(90deg); }
 
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+
+  @media (max-width: 1200px) {
+    .category-content { grid-template-columns: repeat(2, 1fr); gap: 12px 25px; }
+  }
+  @media (max-width: 700px) {
+    .category-content { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 
@@ -286,8 +262,13 @@
 
 <aside class="sidebar">
   <div class="sidebar-header">
-    <h2 style="margin:0; font-size: 1.2em;">Dupi Stats</h2>
-    <input type="text" id="search" class="search-box" placeholder="Buscar jugador...">
+    <h2 style="margin:0; font-size: 1.2em;">MOSS Stats</h2>
+    <div class="search-container">
+        <input type="text" id="search" class="search-box" placeholder="Buscar jugador...">
+        <div id="btn-sort" class="sort-toggle" title="Cambiar orden">
+            <img id="sort-icon" src="textures/gui/by_time.png" alt="sort">
+        </div>
+    </div>
   </div>
   <div id="players-list"></div>
 </aside>
@@ -295,7 +276,7 @@
 <main class="content" id="main-content">
   <div class="stats-wrapper" id="stats-wrapper">
     <div id="stats-header">
-      <div style="text-align: center; color: var(--text-dim); margin-top: 100px;">
+      <div style="text-align: center; color: var(--text-dim); margin-top: 150px;">
         <h1>Seleccioná un jugador</h1>
       </div>
     </div>
@@ -348,9 +329,12 @@ const statsHeader = document.getElementById("stats-header");
 const categoriesContainer = document.getElementById("categories-container");
 const dynamicCategories = document.getElementById("dynamic-categories");
 const searchInput = document.getElementById("search");
+const btnSort = document.getElementById("btn-sort");
+const sortIcon = document.getElementById("sort-icon");
 
-let allPlayers = [];
-let openCategories = new Set(); 
+let rawPlayersData = []; // Los datos tal cual vienen del top (por tiempo)
+let currentSort = 'time'; // 'time' o 'az'
+let openCategories = new Set();
 
 const vanillaSections = [
   { id: "minecraft:killed", title: "Entidades Asesinadas" },
@@ -381,18 +365,37 @@ function initStructure() {
 
 initStructure();
 
+// Carga inicial
 fetch(`${API_BASE}/players`)
   .then(res => res.json())
   .then(data => {
-    allPlayers = (data.players || []).sort((a, b) => {
-      const nameA = a.name.toLowerCase();
-      const nameB = b.name.toLowerCase();
-      const cleanA = nameA.startsWith('.') ? nameA.substring(1) : nameA;
-      const cleanB = nameB.startsWith('.') ? nameB.substring(1) : nameB;
-      return cleanA.localeCompare(cleanB);
-    });
-    renderPlayerList(allPlayers);
+    rawPlayersData = data; // Ya viene ordenado por tiempo desde la API
+    renderSortedList();
   });
+
+function renderSortedList() {
+  let listToRender = [...rawPlayersData];
+
+  // Aplicar filtro de búsqueda si existe
+  const term = searchInput.value.toLowerCase();
+  if (term) {
+    listToRender = listToRender.filter(p => p.name.toLowerCase().includes(term));
+  }
+
+  // Aplicar Orden
+  if (currentSort === 'az') {
+    listToRender.sort((a, b) => {
+      const nameA = a.name.toLowerCase().replace(/^\./, '');
+      const nameB = b.name.toLowerCase().replace(/^\./, '');
+      return nameA.localeCompare(nameB);
+    });
+  } else {
+    // Orden por tiempo (rank o value)
+    listToRender.sort((a, b) => (a.rank || 0) - (b.rank || 0));
+  }
+
+  renderPlayerList(listToRender);
+}
 
 function renderPlayerList(list) {
   playersListDiv.innerHTML = "";
@@ -405,15 +408,25 @@ function renderPlayerList(list) {
       document.querySelectorAll('.player').forEach(el => el.classList.remove('active'));
       div.classList.add('active');
       loadPlayerStats(p.uuid, p.name);
-      // Auto scroll al contenido en móvil
-      if(window.innerWidth <= 768) {
-        mainContent.scrollIntoView({ behavior: 'smooth' });
-      }
     };
     playersListDiv.appendChild(div);
   });
 }
 
+btnSort.onclick = () => {
+    if (currentSort === 'time') {
+        currentSort = 'az';
+        sortIcon.src = "textures/gui/by_az.png";
+    } else {
+        currentSort = 'time';
+        sortIcon.src = "textures/gui/by_time.png";
+    }
+    renderSortedList();
+};
+
+searchInput.oninput = () => renderSortedList();
+
+// El resto de funciones de renderizado se mantienen igual...
 function getIconPath(key, categoryId) {
   const fileName = key.split(':')[1]; 
   if (categoryId === "minecraft:custom") return `textures/custom/${fileName}.png`;
@@ -440,11 +453,9 @@ function createStatRow(key, value, categoryId = "minecraft:custom") {
 
 async function loadPlayerStats(uuid, name) {
   mainContent.classList.add('loading-active');
-
   try {
     const res = await fetch(`${API_BASE}/player?uuid=${uuid}`);
     const data = await res.json();
-    
     const allStats = data.stats?.stats || {};
     const customData = allStats["minecraft:custom"] || {};
 
@@ -470,23 +481,16 @@ async function loadPlayerStats(uuid, name) {
 
     renderDistance(customData, usedKeys);
     renderCombat(customData, usedKeys);
-    
-    vanillaSections.forEach(section => {
-      renderVanillaSection(section, allStats[section.id] || {});
-    });
-
+    vanillaSections.forEach(section => renderVanillaSection(section, allStats[section.id] || {}));
     renderInteractions(customData, usedKeys);
     renderVarious(customData, usedKeys);
-
     applyPersistence();
 
   } catch (err) {
     console.error(err);
     statsHeader.innerHTML = "<h1>Error al conectar con la API</h1>";
   } finally {
-    setTimeout(() => {
-      mainContent.classList.remove('loading-active');
-    }, 10);
+    setTimeout(() => mainContent.classList.remove('loading-active'), 10);
   }
 }
 
@@ -494,16 +498,12 @@ function renderDistance(data, used) {
   const total = [...distStatsApie, ...distStatsMontado].reduce((acc, k) => acc + (data[k] || 0), 0);
   const sec = document.getElementById('sec-distance');
   if (total === 0) { sec.style.display = "none"; return; }
-  
   sec.style.display = "block";
   let html = `<div class="stat-row" style="grid-column: 1/-1; border-bottom: 2px solid var(--accent);"><span class="stat-label" style="color:var(--accent); font-weight:bold;">TOTAL RECORRIDO</span><span class="stat-value" style="color:var(--accent);">${Math.round(total/100)} bloques</span></div>`;
-  
   const apie = distStatsApie.filter(k => data[k]).map(k => { used.add(k); return createStatRow(k, data[k]); });
   if(apie.length) html += `<div class="sub-category-title">A pie</div>` + apie.join('');
-  
   const montado = distStatsMontado.filter(k => data[k]).map(k => { used.add(k); return createStatRow(k, data[k]); });
   if(montado.length) html += `<div class="sub-category-title">Montado</div>` + montado.join('');
-  
   document.getElementById('content-distance').innerHTML = html;
 }
 
@@ -518,7 +518,6 @@ function renderVanillaSection(section, data) {
   const entries = Object.entries(data).sort((a,b) => b[1]-a[1]);
   const sec = document.getElementById(`sec-${section.id.replace(':', '-')}`);
   if(!entries.length) { sec.style.display = "none"; return; }
-  
   sec.style.display = "block";
   const total = entries.reduce((acc, e) => acc + e[1], 0);
   let html = `<div class="stat-row" style="grid-column: 1/-1; border-bottom: 2px solid var(--accent);"><span class="stat-label" style="color:var(--accent); font-weight:bold;">TOTAL</span><span class="stat-value" style="color:var(--accent);">${total.toLocaleString()}</span></div>`;
@@ -543,7 +542,6 @@ function renderVarious(data, used) {
 function toggleCategory(header) {
   const id = header.getAttribute('data-cat-id');
   const content = header.nextElementSibling;
-  
   if (content.classList.contains('open')) {
     content.classList.remove('open');
     header.classList.remove('open');
@@ -568,11 +566,6 @@ function applyPersistence() {
     }
   });
 }
-
-searchInput.addEventListener("input", (e) => {
-  const term = e.target.value.toLowerCase();
-  renderPlayerList(allPlayers.filter(p => p.name.toLowerCase().includes(term)));
-});
 </script>
 
 </body>
