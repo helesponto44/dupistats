@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Stats Dashboard - MOSS</title>
+<title>Dupi Stats</title>
+
+<link rel="icon" type="image/png" href="textures/gui/server-icon.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -70,6 +72,18 @@
     border-bottom: 1px solid var(--border);
   }
 
+  .sidebar-title-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .server-icon {
+    width: 24px;
+    height: 24px;
+    image-rendering: pixelated;
+  }
+
   .search-container {
     display: flex;
     align-items: center;
@@ -130,10 +144,21 @@
     overflow-y: auto;
     background: var(--bg-dark);
     position: relative;
+    display: flex;
+    flex-direction: column;
   }
 
   .stats-wrapper {
+    flex-grow: 1;
     transition: filter var(--transition-speed) ease, opacity var(--transition-speed) ease;
+  }
+
+  .footer-version {
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-dim);
+    padding: 20px 0 10px 0;
+    margin-top: auto;
   }
 
   .loading-active .stats-wrapper {
@@ -332,17 +357,23 @@
     
     .mobile-nav-toggle { display: flex; }
 
+    /* Barra abierta por defecto en móvil */
     .sidebar {
       position: fixed;
       left: 0;
       top: 0;
       bottom: 0;
-      transform: translateX(-100%);
+      transform: translateX(0); 
       width: 80%;
       max-width: 300px;
       box-shadow: 10px 0 30px rgba(0,0,0,0.8);
     }
 
+    .sidebar:not(.mobile-open) {
+      transform: translateX(-100%);
+    }
+
+    /* Sobreescribimos la clase para que cuando esté "open" se vea (por defecto lo está) */
     .sidebar.mobile-open {
       transform: translateX(0);
     }
@@ -371,6 +402,7 @@
       z-index: 90;
     }
 
+    /* Overlay activo por defecto si el sidebar está abierto */
     .sidebar-overlay.active { display: block; }
   }
 </style>
@@ -378,15 +410,18 @@
 
 <body>
 
-<div class="sidebar-overlay" id="overlay"></div>
+<div class="sidebar-overlay active" id="overlay"></div>
 
 <button class="mobile-nav-toggle" id="menu-btn">
-    <img src="textures/gui/search.png" alt="menu">
+    <img src="textures/gui/swap_player.png" alt="menu">
 </button>
 
-<aside class="sidebar" id="sidebar">
+<aside class="sidebar mobile-open" id="sidebar">
   <div class="sidebar-header">
-    <h2 style="margin:0; font-size: 1.2em;">MOSS Stats</h2>
+    <div class="sidebar-title-container">
+        <img src="textures/gui/server-icon.png" class="server-icon" alt="icon">
+        <h2 style="margin:0; font-size: 1.2em;">Dupi stats</h2>
+    </div>
     <div class="search-container">
         <input type="text" id="search" class="search-box" placeholder="Buscar jugador...">
         <div id="btn-sort" class="sort-toggle" title="Cambiar orden">
@@ -465,6 +500,7 @@
       </div>
     </div>
   </div>
+  <div class="footer-version">web-server stats api version 7.0</div>
 </main>
 
 <script src="statMap.js"></script>
@@ -510,7 +546,7 @@ const vanillaSections = [
 
 const distStatsApie = ["minecraft:aviate_one_cm", "minecraft:climb_one_cm", "minecraft:walk_one_cm", "minecraft:sprint_one_cm", "minecraft:crouch_one_cm", "minecraft:sneak_time", "minecraft:fall_one_cm", "minecraft:swim_one_cm", "minecraft:walk_on_water_one_cm", "minecraft:walk_under_water_one_cm", "minecraft:jump"];
 const distStatsMontado = ["minecraft:pig_one_cm", "minecraft:minecart_one_cm", "minecraft:happy_ghast_one_cm", "minecraft:strider_one_cm", "minecraft:horse_one_cm", "minecraft:nautilus_one_cm", "minecraft:boat_one_cm"];
-const combatStats = ["damage_absorbed", "damage_blocked_by_shield", "damage_dealt_absorbed", "damage_dealt_resisted", "damage_resisted", "damage_taken", "deaths", "mob_kills", "player_kills"].map(s => "minecraft:" + s);
+const combatStats = ["damage_absorbed", "damage_blocked_by_shield", "damage_dealt", "damage_dealt_absorbed", "damage_dealt_resisted", "damage_resisted", "damage_taken", "deaths", "mob_kills", "player_kills"].map(s => "minecraft:" + s);
 const interactionKeywords = ["interaction_", "open_", "bell_ring", "enchanted_item", "treasure_fished", "talk_to_villager", "eat_cake"];
 
 function initStructure() {
@@ -713,8 +749,17 @@ function renderDistance(data, used) {
   const catId = 'distance';
   const total = [...distStatsApie, ...distStatsMontado].reduce((acc, k) => acc + (data[k] || 0), 0);
   const sec = document.getElementById('sec-distance');
-  const apie = distStatsApie.filter(k => data[k] && matchesFilter(k, catId)).map(k => { used.add(k); return createStatRow(k, data[k]); });
-  const montado = distStatsMontado.filter(k => data[k] && matchesFilter(k, catId)).map(k => { used.add(k); return createStatRow(k, data[k]); });
+  
+  const apie = distStatsApie
+    .filter(k => data[k] && matchesFilter(k, catId))
+    .sort((a, b) => (data[b] || 0) - (data[a] || 0)) // Orden mayor a menor
+    .map(k => { used.add(k); return createStatRow(k, data[k]); });
+
+  const montado = distStatsMontado
+    .filter(k => data[k] && matchesFilter(k, catId))
+    .sort((a, b) => (data[b] || 0) - (data[a] || 0)) // Orden mayor a menor
+    .map(k => { used.add(k); return createStatRow(k, data[k]); });
+
   if (apie.length === 0 && montado.length === 0 && !categoryFilters[catId]) { sec.style.display = "none"; return; }
   sec.style.display = "block";
   let html = getClearBtn(catId);
@@ -726,7 +771,11 @@ function renderDistance(data, used) {
 
 function renderCombat(data, used) {
   const catId = 'combat';
-  const entries = combatStats.filter(k => data[k] && matchesFilter(k, catId)).map(k => { used.add(k); return createStatRow(k, data[k]); });
+  const entries = combatStats
+    .filter(k => data[k] && matchesFilter(k, catId))
+    .sort((a, b) => (data[b] || 0) - (data[a] || 0)) // Orden mayor a menor
+    .map(k => { used.add(k); return createStatRow(k, data[k]); });
+  
   const sec = document.getElementById('sec-combat');
   if(!entries.length && !categoryFilters[catId]) { sec.style.display = "none"; return; }
   sec.style.display = "block";
