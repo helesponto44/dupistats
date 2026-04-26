@@ -69,14 +69,13 @@
     width: 32px;
     height: 32px;
     cursor: pointer;
-    background: transparent; /* Antes era #121212 */
-    border: none;             /* Antes era 1px solid var(--border) */
+    background: transparent;
+    border: none;
     border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.2s; /* Opcional: una transición más suave */
-   }
+  }
 
   .sort-toggle:hover { background: var(--hover); }
   .sort-toggle img { width: 20px; height: 20px; image-rendering: pixelated; }
@@ -100,7 +99,7 @@
     border-left: 4px solid var(--accent);
   }
 
-  /* Area de Contenido */
+  /* Contenido */
   .content {
     flex-grow: 1;
     padding: 30px;
@@ -151,7 +150,6 @@
     background: #252525;
     padding: 4px 8px;
     border-radius: 4px;
-    font-family: inherit;
     font-size: 11px;
     color: var(--text-dim);
   }
@@ -167,7 +165,6 @@
   .category-header {
     background: var(--bg-panel);
     padding: 12px 15px;
-    cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -176,6 +173,14 @@
 
   .category-header:hover { background: var(--hover); }
   
+  .category-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-grow: 1;
+    cursor: pointer;
+  }
+
   .category-title {
     font-weight: bold;
     color: var(--accent);
@@ -183,6 +188,37 @@
     font-size: 13px;
     letter-spacing: 1px;
   }
+
+  .category-search-input {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-family: inherit;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 13px;
+    letter-spacing: 1px;
+    outline: none;
+    width: 100%;
+    display: none; /* Oculto por defecto */
+  }
+
+  .category-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .btn-cat-search {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    image-rendering: pixelated;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+
+  .btn-cat-search:hover { opacity: 1; }
 
   .category-content {
     padding: 20px;
@@ -194,6 +230,17 @@
 
   .category-content.open { display: grid; }
   .category-header.open .chevron::before { transform: rotate(90deg); }
+
+  .clear-filter {
+    grid-column: 1 / -1;
+    color: #ff4444;
+    font-size: 11px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: none;
+    align-items: center;
+    gap: 4px;
+  }
 
   .sub-category-title {
     grid-column: 1 / -1;
@@ -283,17 +330,29 @@
 
     <div id="categories-container" style="display: none;">
       <div class="stat-category" id="sec-distance">
-          <div class="category-header" onclick="toggleCategory(this)" data-cat-id="distance">
-            <span class="category-title">Distancia Recorrida</span>
-            <span class="chevron"></span>
+          <div class="category-header" data-cat-id="distance">
+            <div class="category-left" onclick="toggleCategory(this.parentElement)">
+                <span class="category-title">Distancia Recorrida</span>
+                <input type="text" class="category-search-input" placeholder="BUSCAR..." onclick="event.stopPropagation()">
+            </div>
+            <div class="category-actions">
+                <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this)" title="Buscar en categoría">
+                <span class="chevron" onclick="toggleCategory(this.parentElement.parentElement)"></span>
+            </div>
           </div>
           <div class="category-content" id="content-distance"></div>
       </div>
 
       <div class="stat-category" id="sec-combat">
-          <div class="category-header" onclick="toggleCategory(this)" data-cat-id="combat">
-            <span class="category-title">Combate</span>
-            <span class="chevron"></span>
+          <div class="category-header" data-cat-id="combat">
+            <div class="category-left" onclick="toggleCategory(this.parentElement)">
+                <span class="category-title">Combate</span>
+                <input type="text" class="category-search-input" placeholder="BUSCAR..." onclick="event.stopPropagation()">
+            </div>
+            <div class="category-actions">
+                <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this)" title="Buscar en categoría">
+                <span class="chevron" onclick="toggleCategory(this.parentElement.parentElement)"></span>
+            </div>
           </div>
           <div class="category-content" id="content-combat"></div>
       </div>
@@ -301,17 +360,29 @@
       <div id="dynamic-categories"></div>
 
       <div class="stat-category" id="sec-interactions">
-          <div class="category-header" onclick="toggleCategory(this)" data-cat-id="interactions">
-            <span class="category-title">Interacciones</span>
-            <span class="chevron"></span>
+          <div class="category-header" data-cat-id="interactions">
+            <div class="category-left" onclick="toggleCategory(this.parentElement)">
+                <span class="category-title">Interacciones</span>
+                <input type="text" class="category-search-input" placeholder="BUSCAR..." onclick="event.stopPropagation()">
+            </div>
+            <div class="category-actions">
+                <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this)" title="Buscar en categoría">
+                <span class="chevron" onclick="toggleCategory(this.parentElement.parentElement)"></span>
+            </div>
           </div>
           <div class="category-content" id="content-interactions"></div>
       </div>
 
       <div class="stat-category" id="sec-various">
-          <div class="category-header" onclick="toggleCategory(this)" data-cat-id="various">
-            <span class="category-title">Varios</span>
-            <span class="chevron"></span>
+          <div class="category-header" data-cat-id="various">
+            <div class="category-left" onclick="toggleCategory(this.parentElement)">
+                <span class="category-title">Varios</span>
+                <input type="text" class="category-search-input" placeholder="BUSCAR..." onclick="event.stopPropagation()">
+            </div>
+            <div class="category-actions">
+                <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this)" title="Buscar en categoría">
+                <span class="chevron" onclick="toggleCategory(this.parentElement.parentElement)"></span>
+            </div>
           </div>
           <div class="category-content" id="content-various"></div>
       </div>
@@ -332,9 +403,11 @@ const searchInput = document.getElementById("search");
 const btnSort = document.getElementById("btn-sort");
 const sortIcon = document.getElementById("sort-icon");
 
-let rawPlayersData = []; // Los datos tal cual vienen del top (por tiempo)
-let currentSort = 'time'; // 'time' o 'az'
+let rawPlayersData = [];
+let currentSort = 'time';
 let openCategories = new Set();
+let categoryFilters = {}; 
+let lastPlayerData = null;
 
 const vanillaSections = [
   { id: "minecraft:killed", title: "Entidades Asesinadas" },
@@ -354,35 +427,80 @@ const interactionKeywords = ["interaction_", "open_", "bell_ring", "enchanted_it
 function initStructure() {
   dynamicCategories.innerHTML = vanillaSections.map(section => `
     <div class="stat-category" id="sec-${section.id.replace(':', '-')}">
-      <div class="category-header" onclick="toggleCategory(this)" data-cat-id="${section.id}">
-        <span class="category-title">${section.title}</span>
-        <span class="chevron"></span>
+      <div class="category-header" data-cat-id="${section.id}">
+        <div class="category-left" onclick="toggleCategory(this.parentElement)">
+            <span class="category-title">${section.title}</span>
+            <input type="text" class="category-search-input" placeholder="BUSCAR..." onclick="event.stopPropagation()">
+        </div>
+        <div class="category-actions">
+            <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this)" title="Buscar en categoría">
+            <span class="chevron" onclick="toggleCategory(this.parentElement.parentElement)"></span>
+        </div>
       </div>
       <div class="category-content" id="content-${section.id.replace(':', '-')}"></div>
     </div>
   `).join('');
+
+  // Delegación de eventos para inputs de categoría
+  document.querySelectorAll('.category-search-input').forEach(input => {
+    input.addEventListener('input', (e) => {
+        const catId = e.target.closest('.category-header').getAttribute('data-cat-id');
+        categoryFilters[catId] = e.target.value.toLowerCase();
+        if(lastPlayerData) refreshUI();
+    });
+
+    // Cierre estricto: al perder foco se oculta siempre
+    input.addEventListener('blur', (e) => {
+        const header = e.target.closest('.category-header');
+        const title = header.querySelector('.category-title');
+        e.target.style.display = "none";
+        title.style.display = "inline";
+    });
+  });
+}
+
+function toggleSearch(btn) {
+    const header = btn.closest('.category-header');
+    const title = header.querySelector('.category-title');
+    const input = header.querySelector('.category-search-input');
+
+    // Si está oculto, lo mostramos y damos foco
+    if (input.style.display === "none" || input.style.display === "") {
+        title.style.display = "none";
+        input.style.display = "inline";
+        input.focus();
+    } else {
+        // Si ya está visible (clic repetido en lupa), lo ocultamos (el blur también se disparará)
+        input.style.display = "none";
+        title.style.display = "inline";
+    }
+}
+
+function clearCategoryFilter(catId) {
+    categoryFilters[catId] = "";
+    const header = document.querySelector(`.category-header[data-cat-id="${catId}"]`);
+    const input = header.querySelector('.category-search-input');
+    const title = header.querySelector('.category-title');
+    input.value = "";
+    input.style.display = "none";
+    title.style.display = "inline";
+    if(lastPlayerData) refreshUI();
 }
 
 initStructure();
 
-// Carga inicial
 fetch(`${API_BASE}/players`)
   .then(res => res.json())
   .then(data => {
-    rawPlayersData = data; // Ya viene ordenado por tiempo desde la API
+    rawPlayersData = data;
     renderSortedList();
   });
 
 function renderSortedList() {
   let listToRender = [...rawPlayersData];
-
-  // Aplicar filtro de búsqueda si existe
   const term = searchInput.value.toLowerCase();
-  if (term) {
-    listToRender = listToRender.filter(p => p.name.toLowerCase().includes(term));
-  }
+  if (term) listToRender = listToRender.filter(p => p.name.toLowerCase().includes(term));
 
-  // Aplicar Orden
   if (currentSort === 'az') {
     listToRender.sort((a, b) => {
       const nameA = a.name.toLowerCase().replace(/^\./, '');
@@ -390,10 +508,8 @@ function renderSortedList() {
       return nameA.localeCompare(nameB);
     });
   } else {
-    // Orden por tiempo (rank o value)
     listToRender.sort((a, b) => (a.rank || 0) - (b.rank || 0));
   }
-
   renderPlayerList(listToRender);
 }
 
@@ -414,24 +530,31 @@ function renderPlayerList(list) {
 }
 
 btnSort.onclick = () => {
-    if (currentSort === 'time') {
-        currentSort = 'az';
-        sortIcon.src = "textures/gui/by_az.png";
-    } else {
-        currentSort = 'time';
-        sortIcon.src = "textures/gui/by_time.png";
-    }
+    currentSort = (currentSort === 'time') ? 'az' : 'time';
+    sortIcon.src = `textures/gui/by_${currentSort}.png`;
     renderSortedList();
 };
 
 searchInput.oninput = () => renderSortedList();
 
-// El resto de funciones de renderizado se mantienen igual...
 function getIconPath(key, categoryId) {
   const fileName = key.split(':')[1]; 
   if (categoryId === "minecraft:custom") return `textures/custom/${fileName}.png`;
   if (categoryId === "minecraft:killed" || categoryId === "minecraft:killed_by") return `textures/entities/${fileName}.png`;
   return `textures/items/${fileName}.png`;
+}
+
+function matchesFilter(key, catId) {
+    const filter = categoryFilters[catId];
+    if (!filter) return true;
+    
+    const terms = filter.split(',').map(t => t.trim()).filter(t => t !== "");
+    if (terms.length === 0) return true;
+
+    const label = (STAT_MAP[key]?.label || "").toLowerCase();
+    const id = key.toLowerCase();
+
+    return terms.some(term => label.includes(term) || id.includes(term));
 }
 
 function createStatRow(key, value, categoryId = "minecraft:custom") {
@@ -456,6 +579,18 @@ async function loadPlayerStats(uuid, name) {
   try {
     const res = await fetch(`${API_BASE}/player?uuid=${uuid}`);
     const data = await res.json();
+    lastPlayerData = { data, name, uuid };
+    refreshUI();
+  } catch (err) {
+    console.error(err);
+    statsHeader.innerHTML = "<h1>Error al conectar con la API</h1>";
+  } finally {
+    setTimeout(() => mainContent.classList.remove('loading-active'), 10);
+  }
+}
+
+function refreshUI() {
+    const { data, name, uuid } = lastPlayerData;
     const allStats = data.stats?.stats || {};
     const customData = allStats["minecraft:custom"] || {};
 
@@ -485,58 +620,68 @@ async function loadPlayerStats(uuid, name) {
     renderInteractions(customData, usedKeys);
     renderVarious(customData, usedKeys);
     applyPersistence();
+}
 
-  } catch (err) {
-    console.error(err);
-    statsHeader.innerHTML = "<h1>Error al conectar con la API</h1>";
-  } finally {
-    setTimeout(() => mainContent.classList.remove('loading-active'), 10);
-  }
+function getClearBtn(catId) {
+    return categoryFilters[catId] ? `<div class="clear-filter" style="display:flex" onclick="clearCategoryFilter('${catId}')">Limpiar filtros ✖</div>` : '';
 }
 
 function renderDistance(data, used) {
+  const catId = 'distance';
   const total = [...distStatsApie, ...distStatsMontado].reduce((acc, k) => acc + (data[k] || 0), 0);
   const sec = document.getElementById('sec-distance');
-  if (total === 0) { sec.style.display = "none"; return; }
+  
+  const apie = distStatsApie.filter(k => data[k] && matchesFilter(k, catId)).map(k => { used.add(k); return createStatRow(k, data[k]); });
+  const montado = distStatsMontado.filter(k => data[k] && matchesFilter(k, catId)).map(k => { used.add(k); return createStatRow(k, data[k]); });
+
+  if (apie.length === 0 && montado.length === 0 && !categoryFilters[catId]) { sec.style.display = "none"; return; }
   sec.style.display = "block";
-  let html = `<div class="stat-row" style="grid-column: 1/-1; border-bottom: 2px solid var(--accent);"><span class="stat-label" style="color:var(--accent); font-weight:bold;">TOTAL RECORRIDO</span><span class="stat-value" style="color:var(--accent);">${Math.round(total/100)} bloques</span></div>`;
-  const apie = distStatsApie.filter(k => data[k]).map(k => { used.add(k); return createStatRow(k, data[k]); });
+
+  let html = getClearBtn(catId);
+  html += `<div class="stat-row" style="grid-column: 1/-1; border-bottom: 2px solid var(--accent);"><span class="stat-label" style="color:var(--accent); font-weight:bold;">TOTAL RECORRIDO</span><span class="stat-value" style="color:var(--accent);">${Math.round(total/100)} bloques</span></div>`;
   if(apie.length) html += `<div class="sub-category-title">A pie</div>` + apie.join('');
-  const montado = distStatsMontado.filter(k => data[k]).map(k => { used.add(k); return createStatRow(k, data[k]); });
   if(montado.length) html += `<div class="sub-category-title">Montado</div>` + montado.join('');
   document.getElementById('content-distance').innerHTML = html;
 }
 
 function renderCombat(data, used) {
-  const entries = combatStats.filter(k => data[k]).map(k => { used.add(k); return createStatRow(k, data[k]); });
+  const catId = 'combat';
+  const entries = combatStats.filter(k => data[k] && matchesFilter(k, catId)).map(k => { used.add(k); return createStatRow(k, data[k]); });
   const sec = document.getElementById('sec-combat');
-  sec.style.display = entries.length ? "block" : "none";
-  if(entries.length) document.getElementById('content-combat').innerHTML = entries.join('');
+  if(!entries.length && !categoryFilters[catId]) { sec.style.display = "none"; return; }
+  sec.style.display = "block";
+  document.getElementById('content-combat').innerHTML = getClearBtn(catId) + entries.join('');
 }
 
 function renderVanillaSection(section, data) {
-  const entries = Object.entries(data).sort((a,b) => b[1]-a[1]);
+  const catId = section.id;
+  const entries = Object.entries(data).filter(([k,v]) => matchesFilter(k, catId)).sort((a,b) => b[1]-a[1]);
   const sec = document.getElementById(`sec-${section.id.replace(':', '-')}`);
-  if(!entries.length) { sec.style.display = "none"; return; }
+  if(!entries.length && !categoryFilters[catId]) { sec.style.display = "none"; return; }
   sec.style.display = "block";
-  const total = entries.reduce((acc, e) => acc + e[1], 0);
-  let html = `<div class="stat-row" style="grid-column: 1/-1; border-bottom: 2px solid var(--accent);"><span class="stat-label" style="color:var(--accent); font-weight:bold;">TOTAL</span><span class="stat-value" style="color:var(--accent);">${total.toLocaleString()}</span></div>`;
+  const total = Object.values(data).reduce((acc, v) => acc + v, 0);
+  let html = getClearBtn(catId);
+  html += `<div class="stat-row" style="grid-column: 1/-1; border-bottom: 2px solid var(--accent);"><span class="stat-label" style="color:var(--accent); font-weight:bold;">TOTAL</span><span class="stat-value" style="color:var(--accent);">${total.toLocaleString()}</span></div>`;
   html += entries.map(([k, v]) => createStatRow(k, v, section.id)).join('');
   document.getElementById(`content-${section.id.replace(':', '-')}`).innerHTML = html;
 }
 
 function renderInteractions(data, used) {
-  const entries = Object.entries(data).filter(([k, v]) => interactionKeywords.some(kw => k.includes(kw)) && v > 0);
+  const catId = 'interactions';
+  const entries = Object.entries(data).filter(([k, v]) => interactionKeywords.some(kw => k.includes(kw)) && v > 0 && matchesFilter(k, catId));
   const sec = document.getElementById('sec-interactions');
-  sec.style.display = entries.length ? "block" : "none";
-  if(entries.length) document.getElementById('content-interactions').innerHTML = entries.map(([k, v]) => { used.add(k); return createStatRow(k, v); }).join('');
+  if(!entries.length && !categoryFilters[catId]) { sec.style.display = "none"; return; }
+  sec.style.display = "block";
+  document.getElementById('content-interactions').innerHTML = getClearBtn(catId) + entries.map(([k, v]) => { used.add(k); return createStatRow(k, v); }).join('');
 }
 
 function renderVarious(data, used) {
-  const entries = Object.entries(data).filter(([k, v]) => !used.has(k) && v > 0).sort((a,b) => b[1]-a[1]);
+  const catId = 'various';
+  const entries = Object.entries(data).filter(([k, v]) => !used.has(k) && v > 0 && matchesFilter(k, catId)).sort((a,b) => b[1]-a[1]);
   const sec = document.getElementById('sec-various');
-  sec.style.display = entries.length ? "block" : "none";
-  if(entries.length) document.getElementById('content-various').innerHTML = entries.map(([k, v]) => createStatRow(k, v)).join('');
+  if(!entries.length && !categoryFilters[catId]) { sec.style.display = "none"; return; }
+  sec.style.display = "block";
+  document.getElementById('content-various').innerHTML = getClearBtn(catId) + entries.map(([k, v]) => createStatRow(k, v)).join('');
 }
 
 function toggleCategory(header) {
@@ -557,12 +702,18 @@ function applyPersistence() {
   document.querySelectorAll('.category-header').forEach(header => {
     const id = header.getAttribute('data-cat-id');
     const content = header.nextElementSibling;
+    const title = header.querySelector('.category-title');
+    const input = header.querySelector('.category-search-input');
+
+    // Restaurar estado de expansión
     if (openCategories.has(id)) {
       content.classList.add('open');
       header.classList.add('open');
-    } else {
-      content.classList.remove('open');
-      header.classList.remove('open');
+    }
+
+    // Restaurar el valor del input si existe un filtro, pero mantenerlo oculto (según requerimiento de Blur)
+    if (categoryFilters[id]) {
+        input.value = categoryFilters[id];
     }
   });
 }
