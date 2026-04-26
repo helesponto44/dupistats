@@ -20,6 +20,7 @@
     --hover: #2a2a2a;
     --icon-size: 32px; 
     --transition-speed: 0.01s;
+    --sidebar-width: 250px;
   }
 
   body {
@@ -32,15 +33,36 @@
     overflow: hidden;
   }
 
+  /* --- Mobile Toggle Button --- */
+  .mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: var(--accent);
+    border-radius: 50%;
+    z-index: 1000;
+    border: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-nav-toggle img { width: 24px; height: 24px; }
+
   /* Sidebar */
   .sidebar {
-    width: 250px;
-    min-width: 250px;
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     background: var(--bg-panel);
-    z-index: 10;
+    z-index: 100;
+    transition: transform 0.3s ease;
   }
 
   .sidebar-header {
@@ -63,6 +85,7 @@
     color: white;
     border-radius: 4px;
     font-family: inherit;
+    width: 100%;
   }
 
   .sort-toggle {
@@ -75,6 +98,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
 
   .sort-toggle:hover { background: var(--hover); }
@@ -152,6 +176,7 @@
     border-radius: 4px;
     font-size: 11px;
     color: var(--text-dim);
+    word-break: break-all;
   }
 
   .stat-category {
@@ -169,7 +194,7 @@
     justify-content: space-between;
     align-items: center;
     user-select: none;
-    cursor: pointer; /* Todo el header es clickeable */
+    cursor: pointer;
   }
 
   .category-header:hover { background: var(--hover); }
@@ -296,18 +321,70 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
 
+  /* --- RESPONSIVE DESIGN --- */
+
   @media (max-width: 1200px) {
     .category-content { grid-template-columns: repeat(2, 1fr); gap: 12px 25px; }
   }
-  @media (max-width: 700px) {
-    .category-content { grid-template-columns: 1fr; }
+
+  @media (max-width: 900px) {
+    body { flex-direction: column; }
+    
+    .mobile-nav-toggle { display: flex; }
+
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      transform: translateX(-100%);
+      width: 80%;
+      max-width: 300px;
+      box-shadow: 10px 0 30px rgba(0,0,0,0.8);
+    }
+
+    .sidebar.mobile-open {
+      transform: translateX(0);
+    }
+
+    .content { padding: 15px; padding-top: 20px; }
+
+    .content-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .header-stats-group {
+      width: 100%;
+      justify-content: space-between;
+      text-align: left;
+    }
+
+    .category-content { grid-template-columns: 1fr; gap: 10px; }
+    
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 90;
+    }
+
+    .sidebar-overlay.active { display: block; }
   }
 </style>
 </head>
 
 <body>
 
-<aside class="sidebar">
+<div class="sidebar-overlay" id="overlay"></div>
+
+<button class="mobile-nav-toggle" id="menu-btn">
+    <img src="textures/gui/search.png" alt="menu">
+</button>
+
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <h2 style="margin:0; font-size: 1.2em;">MOSS Stats</h2>
     <div class="search-container">
@@ -394,6 +471,9 @@
 
 <script>
 const API_BASE = "https://moss-proxy-orpin.vercel.app/api";
+const sidebar = document.getElementById("sidebar");
+const overlay = document.getElementById("overlay");
+const menuBtn = document.getElementById("menu-btn");
 const playersListDiv = document.getElementById("players-list");
 const mainContent = document.getElementById("main-content");
 const statsHeader = document.getElementById("stats-header");
@@ -408,6 +488,15 @@ let currentSort = 'time';
 let openCategories = new Set();
 let categoryFilters = {}; 
 let lastPlayerData = null;
+
+// --- Mobile Logic ---
+function toggleMobileMenu() {
+    sidebar.classList.toggle('mobile-open');
+    overlay.classList.toggle('active');
+}
+
+menuBtn.onclick = toggleMobileMenu;
+overlay.onclick = toggleMobileMenu;
 
 const vanillaSections = [
   { id: "minecraft:killed", title: "Entidades Asesinadas" },
@@ -458,7 +547,7 @@ function initStructure() {
 }
 
 function toggleSearch(btn, event) {
-    if(event) event.stopPropagation(); // Evita que se cierre/abra la categoría al clickear la lupa
+    if(event) event.stopPropagation(); 
     const header = btn.closest('.category-header');
     const title = header.querySelector('.category-title');
     const input = header.querySelector('.category-search-input');
@@ -520,6 +609,7 @@ function renderPlayerList(list) {
       if(div.classList.contains('active')) return;
       document.querySelectorAll('.player').forEach(el => el.classList.remove('active'));
       div.classList.add('active');
+      if(window.innerWidth <= 900) toggleMobileMenu();
       loadPlayerStats(p.uuid, p.name);
     };
     playersListDiv.appendChild(div);
@@ -544,13 +634,10 @@ function getIconPath(key, categoryId) {
 function matchesFilter(key, catId) {
     const filter = categoryFilters[catId];
     if (!filter) return true;
-    
     const terms = filter.split(',').map(t => t.trim()).filter(t => t !== "");
     if (terms.length === 0) return true;
-
     const label = (STAT_MAP[key]?.label || "").toLowerCase();
     const id = key.toLowerCase();
-
     return terms.some(term => label.includes(term) || id.includes(term));
 }
 
@@ -590,7 +677,6 @@ function refreshUI() {
     const { data, name, uuid } = lastPlayerData;
     const allStats = data.stats?.stats || {};
     const customData = allStats["minecraft:custom"] || {};
-
     const playTimeTicks = customData["minecraft:play_time"] || 0;
     const playTimeFormatted = STAT_MAP["minecraft:play_time"]?.format(playTimeTicks) || "0s";
 
@@ -627,13 +713,10 @@ function renderDistance(data, used) {
   const catId = 'distance';
   const total = [...distStatsApie, ...distStatsMontado].reduce((acc, k) => acc + (data[k] || 0), 0);
   const sec = document.getElementById('sec-distance');
-  
   const apie = distStatsApie.filter(k => data[k] && matchesFilter(k, catId)).map(k => { used.add(k); return createStatRow(k, data[k]); });
   const montado = distStatsMontado.filter(k => data[k] && matchesFilter(k, catId)).map(k => { used.add(k); return createStatRow(k, data[k]); });
-
   if (apie.length === 0 && montado.length === 0 && !categoryFilters[catId]) { sec.style.display = "none"; return; }
   sec.style.display = "block";
-
   let html = getClearBtn(catId);
   html += `<div class="stat-row" style="grid-column: 1/-1; border-bottom: 2px solid var(--accent);"><span class="stat-label" style="color:var(--accent); font-weight:bold;">TOTAL RECORRIDO</span><span class="stat-value" style="color:var(--accent);">${(Math.round(total/100)).toLocaleString()} bloques</span></div>`;
   if(apie.length) html += `<div class="sub-category-title">A pie</div>` + apie.join('');
@@ -701,12 +784,10 @@ function applyPersistence() {
     const content = header.nextElementSibling;
     const title = header.querySelector('.category-title');
     const input = header.querySelector('.category-search-input');
-
     if (openCategories.has(id)) {
       content.classList.add('open');
       header.classList.add('open');
     }
-
     if (categoryFilters[id]) {
         input.value = categoryFilters[id];
     }
