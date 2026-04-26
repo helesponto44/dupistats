@@ -169,6 +169,7 @@
     justify-content: space-between;
     align-items: center;
     user-select: none;
+    cursor: pointer; /* Todo el header es clickeable */
   }
 
   .category-header:hover { background: var(--hover); }
@@ -178,7 +179,6 @@
     align-items: center;
     gap: 10px;
     flex-grow: 1;
-    cursor: pointer;
   }
 
   .category-title {
@@ -200,7 +200,7 @@
     letter-spacing: 1px;
     outline: none;
     width: 100%;
-    display: none; /* Oculto por defecto */
+    display: none; 
   }
 
   .category-actions {
@@ -330,28 +330,28 @@
 
     <div id="categories-container" style="display: none;">
       <div class="stat-category" id="sec-distance">
-          <div class="category-header" data-cat-id="distance">
-            <div class="category-left" onclick="toggleCategory(this.parentElement)">
+          <div class="category-header" data-cat-id="distance" onclick="toggleCategory(this)">
+            <div class="category-left">
                 <span class="category-title">Distancia Recorrida</span>
                 <input type="text" class="category-search-input" placeholder="BUSCAR..." onclick="event.stopPropagation()">
             </div>
             <div class="category-actions">
-                <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this)" title="Buscar en categoría">
-                <span class="chevron" onclick="toggleCategory(this.parentElement.parentElement)"></span>
+                <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this, event)" title="Buscar en categoría">
+                <span class="chevron"></span>
             </div>
           </div>
           <div class="category-content" id="content-distance"></div>
       </div>
 
       <div class="stat-category" id="sec-combat">
-          <div class="category-header" data-cat-id="combat">
-            <div class="category-left" onclick="toggleCategory(this.parentElement)">
+          <div class="category-header" data-cat-id="combat" onclick="toggleCategory(this)">
+            <div class="category-left">
                 <span class="category-title">Combate</span>
                 <input type="text" class="category-search-input" placeholder="BUSCAR..." onclick="event.stopPropagation()">
             </div>
             <div class="category-actions">
-                <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this)" title="Buscar en categoría">
-                <span class="chevron" onclick="toggleCategory(this.parentElement.parentElement)"></span>
+                <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this, event)" title="Buscar en categoría">
+                <span class="chevron"></span>
             </div>
           </div>
           <div class="category-content" id="content-combat"></div>
@@ -360,28 +360,28 @@
       <div id="dynamic-categories"></div>
 
       <div class="stat-category" id="sec-interactions">
-          <div class="category-header" data-cat-id="interactions">
-            <div class="category-left" onclick="toggleCategory(this.parentElement)">
+          <div class="category-header" data-cat-id="interactions" onclick="toggleCategory(this)">
+            <div class="category-left">
                 <span class="category-title">Interacciones</span>
                 <input type="text" class="category-search-input" placeholder="BUSCAR..." onclick="event.stopPropagation()">
             </div>
             <div class="category-actions">
-                <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this)" title="Buscar en categoría">
-                <span class="chevron" onclick="toggleCategory(this.parentElement.parentElement)"></span>
+                <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this, event)" title="Buscar en categoría">
+                <span class="chevron"></span>
             </div>
           </div>
           <div class="category-content" id="content-interactions"></div>
       </div>
 
       <div class="stat-category" id="sec-various">
-          <div class="category-header" data-cat-id="various">
-            <div class="category-left" onclick="toggleCategory(this.parentElement)">
+          <div class="category-header" data-cat-id="various" onclick="toggleCategory(this)">
+            <div class="category-left">
                 <span class="category-title">Varios</span>
                 <input type="text" class="category-search-input" placeholder="BUSCAR..." onclick="event.stopPropagation()">
             </div>
             <div class="category-actions">
-                <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this)" title="Buscar en categoría">
-                <span class="chevron" onclick="toggleCategory(this.parentElement.parentElement)"></span>
+                <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this, event)" title="Buscar en categoría">
+                <span class="chevron"></span>
             </div>
           </div>
           <div class="category-content" id="content-various"></div>
@@ -427,21 +427,20 @@ const interactionKeywords = ["interaction_", "open_", "bell_ring", "enchanted_it
 function initStructure() {
   dynamicCategories.innerHTML = vanillaSections.map(section => `
     <div class="stat-category" id="sec-${section.id.replace(':', '-')}">
-      <div class="category-header" data-cat-id="${section.id}">
-        <div class="category-left" onclick="toggleCategory(this.parentElement)">
+      <div class="category-header" data-cat-id="${section.id}" onclick="toggleCategory(this)">
+        <div class="category-left">
             <span class="category-title">${section.title}</span>
             <input type="text" class="category-search-input" placeholder="BUSCAR..." onclick="event.stopPropagation()">
         </div>
         <div class="category-actions">
-            <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this)" title="Buscar en categoría">
-            <span class="chevron" onclick="toggleCategory(this.parentElement.parentElement)"></span>
+            <img src="textures/gui/search.png" class="btn-cat-search" onclick="toggleSearch(this, event)" title="Buscar en categoría">
+            <span class="chevron"></span>
         </div>
       </div>
       <div class="category-content" id="content-${section.id.replace(':', '-')}"></div>
     </div>
   `).join('');
 
-  // Delegación de eventos para inputs de categoría
   document.querySelectorAll('.category-search-input').forEach(input => {
     input.addEventListener('input', (e) => {
         const catId = e.target.closest('.category-header').getAttribute('data-cat-id');
@@ -449,7 +448,6 @@ function initStructure() {
         if(lastPlayerData) refreshUI();
     });
 
-    // Cierre estricto: al perder foco se oculta siempre
     input.addEventListener('blur', (e) => {
         const header = e.target.closest('.category-header');
         const title = header.querySelector('.category-title');
@@ -459,18 +457,17 @@ function initStructure() {
   });
 }
 
-function toggleSearch(btn) {
+function toggleSearch(btn, event) {
+    if(event) event.stopPropagation(); // Evita que se cierre/abra la categoría al clickear la lupa
     const header = btn.closest('.category-header');
     const title = header.querySelector('.category-title');
     const input = header.querySelector('.category-search-input');
 
-    // Si está oculto, lo mostramos y damos foco
     if (input.style.display === "none" || input.style.display === "") {
         title.style.display = "none";
         input.style.display = "inline";
         input.focus();
     } else {
-        // Si ya está visible (clic repetido en lupa), lo ocultamos (el blur también se disparará)
         input.style.display = "none";
         title.style.display = "inline";
     }
@@ -623,7 +620,7 @@ function refreshUI() {
 }
 
 function getClearBtn(catId) {
-    return categoryFilters[catId] ? `<div class="clear-filter" style="display:flex" onclick="clearCategoryFilter('${catId}')">Limpiar filtros ✖</div>` : '';
+    return categoryFilters[catId] ? `<div class="clear-filter" style="display:flex" onclick="event.stopPropagation(); clearCategoryFilter('${catId}')">Limpiar filtros ✖</div>` : '';
 }
 
 function renderDistance(data, used) {
@@ -638,7 +635,7 @@ function renderDistance(data, used) {
   sec.style.display = "block";
 
   let html = getClearBtn(catId);
-  html += `<div class="stat-row" style="grid-column: 1/-1; border-bottom: 2px solid var(--accent);"><span class="stat-label" style="color:var(--accent); font-weight:bold;">TOTAL RECORRIDO</span><span class="stat-value" style="color:var(--accent);">${Math.round(total/100)} bloques</span></div>`;
+  html += `<div class="stat-row" style="grid-column: 1/-1; border-bottom: 2px solid var(--accent);"><span class="stat-label" style="color:var(--accent); font-weight:bold;">TOTAL RECORRIDO</span><span class="stat-value" style="color:var(--accent);">${(Math.round(total/100)).toLocaleString()} bloques</span></div>`;
   if(apie.length) html += `<div class="sub-category-title">A pie</div>` + apie.join('');
   if(montado.length) html += `<div class="sub-category-title">Montado</div>` + montado.join('');
   document.getElementById('content-distance').innerHTML = html;
@@ -705,13 +702,11 @@ function applyPersistence() {
     const title = header.querySelector('.category-title');
     const input = header.querySelector('.category-search-input');
 
-    // Restaurar estado de expansión
     if (openCategories.has(id)) {
       content.classList.add('open');
       header.classList.add('open');
     }
 
-    // Restaurar el valor del input si existe un filtro, pero mantenerlo oculto (según requerimiento de Blur)
     if (categoryFilters[id]) {
         input.value = categoryFilters[id];
     }

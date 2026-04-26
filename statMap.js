@@ -1,7 +1,7 @@
 // =========================
 // 🔧 HELPERS
 // =========================
-const dist = v => Math.floor(v / 100) + " bloques";
+const dist = v => (Math.round(v / 100)).toLocaleString() + " bloques";
 
 const time = ticks => {
   const seconds = Math.floor(ticks / 20);
